@@ -1,0 +1,12 @@
+/sdk
+build*
+*.vcproj
+/Win32
+/x64
+*.zip
+/.vs
+/.vscode
+/Release
+*.vcxproj
+*.filters
+*.user
