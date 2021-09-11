@@ -2,7 +2,7 @@ Open Platform with Steam
 
 This is the Steam implementation of Open Platform.
 
-It's using steamworks sdk 142.
+The latest available build is using steamworks sdk 142. (It might support and newer versions)
 
 Build instructions:
 1. Make sure you have CMake and Visual Studio Community (Windows) or gcc build esentials (Linux)
