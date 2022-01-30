@@ -47,12 +47,12 @@ private:
 	}
 	OpenAchievementLocal(bool apiEnabled);
 	static OpenAchievementLocal* instance;
-	static mutex mutex;
+	static mutex achMutex;
 	bool apiEnabled;
 };
 
 OpenAchievementLocal* OpenAchievementLocal::instance = nullptr;
-mutex OpenAchievementLocal::mutex;
+mutex OpenAchievementLocal::achMutex;
 
 OpenAchievementLocal::OpenAchievementLocal(bool apiEnabled) {
 	this->apiEnabled = apiEnabled;
@@ -132,7 +132,7 @@ bool OpenAchievementLocal::GetAchievementHidden(const char* name)
 OpenAchievement* OpenAchievementLocal::getInstance(bool apiEnabled)
 {
 	if (instance == nullptr) {
-		lock_guard<std::mutex> lock(mutex);
+		lock_guard<std::mutex> lock(achMutex);
 		if (instance == nullptr) {
 			instance = new OpenAchievementLocal(apiEnabled);
 		}

@@ -42,11 +42,11 @@ private:
 	OpenDLCLocal(bool apiEnabled);
 	bool apiEnabled;
 	static OpenDLCLocal* instance;
-	static std::mutex mutex;
+	static std::mutex dlcMutex;
 };
 
 OpenDLCLocal* OpenDLCLocal::instance = nullptr;
-std::mutex OpenDLCLocal::mutex;
+std::mutex OpenDLCLocal::dlcMutex;
 
 int OpenDLCLocal::CountDLCs()
 {
@@ -89,7 +89,7 @@ void OpenDLCLocal::installDLC(const char* id) {
 OpenDLC* OpenDLCLocal::getInstance(bool apiEnabled)
 {
 	if (instance == nullptr) {
-		std::lock_guard<std::mutex> lock(mutex);
+		std::lock_guard<std::mutex> lock(dlcMutex);
 		if (instance == nullptr) {
 			instance = new OpenDLCLocal(apiEnabled);
 		}
