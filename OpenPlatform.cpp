@@ -49,10 +49,10 @@ public:
 	virtual void SetNotificationsPosition(unsigned int x, unsigned int y);
 	virtual unsigned long long CreateLobby(int type, int maxplayers);
 	virtual bool SetAdditionalInfo(const char* key, const char* value);
+	virtual bool IsPortable();
+	virtual bool ShowFloatingTextBox(int type, int xpos, int ypos, int width, int height);
 private:
-#ifdef WIN32
 	STEAM_CALLBACK(OPlatformLocal, OnGameOverlayActivated, GameOverlayActivated_t);
-#endif
 	bool apiEnabled;
 	void OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure);
 	CCallResult< OPlatformLocal, LobbyCreated_t > m_LobbyCreatedCallResult;
@@ -128,11 +128,11 @@ bool OPlatformLocal::API_pump() {
 
 	return ::overlayActive;
 }
-#ifdef WIN32
+
 void OPlatformLocal::OnGameOverlayActivated(GameOverlayActivated_t* pCallback) {
 	::overlayActive = pCallback->m_bActive;
 }
-#endif
+
 void OPlatformLocal::SetNotificationsPosition(unsigned int x, unsigned int y) {
 	ENotificationPosition pos = k_EPositionBottomRight;
 	switch (x) {
@@ -173,7 +173,28 @@ unsigned long long OPlatformLocal::CreateLobby(int type, int maxplayers) {
 
 bool OPlatformLocal::SetAdditionalInfo(const char* key, const char* value)
 {
-	return SteamFriends()->SetRichPresence(key, value);
+	if (apiEnabled) {
+		return SteamFriends()->SetRichPresence(key, value);
+	}
+	return false;
+}
+
+bool OPlatformLocal::IsPortable()
+{
+	if (apiEnabled) {
+		return SteamUtils()->IsSteamRunningOnSteamDeck();
+	}
+	return false;
+}
+
+bool OPlatformLocal::ShowFloatingTextBox(int type, int xpos, int ypos, int width, int height)
+{
+	if (apiEnabled) {
+		if (type < EFloatingGamepadTextInputMode::k_EFloatingGamepadTextInputModeModeNumeric + 1) {
+			return SteamUtils()->ShowFloatingGamepadTextInput(static_cast<EFloatingGamepadTextInputMode>(type), xpos, ypos, width, height);
+		}
+	}
+	return false;
 }
 
 void OPlatformLocal::OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure) {
