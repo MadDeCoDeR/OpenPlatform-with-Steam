@@ -22,10 +22,10 @@ SOFTWARE.
 */
 #pragma once
 
-typedef struct OpenContent {
+typedef struct OpenContent_t {
 	char* id;
 	char* name;
-};
+}OpenContent;
 
 class OpenDLC {
 public:

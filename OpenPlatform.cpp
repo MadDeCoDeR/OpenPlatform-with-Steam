@@ -207,8 +207,8 @@ void OPlatformLocal::OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure) 
 int32 OPlatformLocal::parseString(const char* string)
 {
 	int32 result = 0;
-	int size = strlen(string);
-	int allDigit = size;
+	size_t size = strlen(string);
+	size_t allDigit = size;
 	for (int i = 0; i < size; i++) {
 		if (std::isdigit(string[i])) {
 			allDigit = allDigit - 1;

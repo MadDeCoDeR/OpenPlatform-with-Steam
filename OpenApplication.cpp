@@ -26,7 +26,7 @@ SOFTWARE.
 
 class OpenAppLocal : public OpenApp {
 	virtual const char* GetLocale();
-	virtual const char* GetBranch();
+	virtual bool GetBranch(char* name);
 	virtual bool GetCloudStats(unsigned long long* totalBytes, unsigned long long* availableBytes);
 public:
 	static OpenApp* getInstance(bool apiEnabled);
@@ -55,12 +55,11 @@ const char* OpenAppLocal::GetLocale()
 	return "";
 }
 
-const char* OpenAppLocal::GetBranch()
+bool OpenAppLocal::GetBranch(char* name)
 {
-	char name[256];
-	if (apiEnabled && SteamApps()->GetCurrentBetaName(name, 256))
-		return name;
-	return "";
+	if (apiEnabled)
+		return SteamApps()->GetCurrentBetaName(name, 256);
+	return false;
 }
 
 bool OpenAppLocal::GetCloudStats(unsigned long long* totalBytes, unsigned long long* availableBytes)
