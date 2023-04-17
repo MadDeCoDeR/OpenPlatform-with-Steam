@@ -30,22 +30,14 @@ class OpenAppLocal : public OpenApp {
 	virtual bool GetCloudStats(unsigned long long* totalBytes, unsigned long long* availableBytes);
 public:
 	static OpenApp* getInstance(bool apiEnabled);
-	OpenAppLocal(OpenApp const&) = delete;
-	OpenAppLocal(OpenAppLocal const&) = delete;
-	void operator=(OpenApp const&) = delete;
-	void operator=(OpenAppLocal const&) = delete;
-private:
 	OpenAppLocal() {
 		this->apiEnabled = false;
 	}
-	OpenAppLocal(bool apiEnabled);
+private:
 	bool apiEnabled;
-	static OpenAppLocal* instance;
-	static std::mutex appMutex;
 };
 
-OpenAppLocal* OpenAppLocal::instance = nullptr;
-std::mutex OpenAppLocal::appMutex;
+OpenAppLocal instance;
 
 const char* OpenAppLocal::GetLocale()
 {
@@ -71,18 +63,8 @@ bool OpenAppLocal::GetCloudStats(unsigned long long* totalBytes, unsigned long l
 
 OpenApp* OpenAppLocal::getInstance(bool apiEnabled)
 {
-	if (instance == nullptr) {
-		std::lock_guard<std::mutex> lock(appMutex);
-		if (instance == nullptr) {
-			instance = new OpenAppLocal(apiEnabled);
-		}
-	}
-	return instance;
-}
-
-OpenAppLocal::OpenAppLocal(bool apiEnabled)
-{
-	this->apiEnabled = apiEnabled;
+	instance.apiEnabled = apiEnabled;
+	return &instance;
 }
 
 OpenApp* getAppInstance(bool apiEnabled)
