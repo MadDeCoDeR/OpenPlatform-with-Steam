@@ -36,31 +36,33 @@ static unsigned long long LobbyID = 0;
 class OPlatformLocal : public OPlatform
 {
 public:
+	virtual const char* API_Name();
 	virtual bool API_Init();
 	virtual bool API_Init(const char* data);
 	virtual void API_Shutdown();
+	virtual OpenAchievement* openAchievement();
+	virtual OpenDLC* openDLC();
+	virtual OpenApp* openApp();
 	virtual const char* GetPlatformUserName();
-	virtual bool GetAchievement(const char* name, bool* status);
-	virtual const char* GetAchievementDevName(unsigned int id);
-	virtual bool GetAchievementPercent(const char* name, unsigned int progress, unsigned int max);
-	virtual bool UnlockAchievement(const char* name);
-	virtual bool LockAchievement(const char* name);
-	virtual const char* GetAchievementName(const char* name);
-	virtual const char* GetAchievementDescription(const char* name);
-	virtual bool GetAchievementHidden(const char* name);
 	virtual void ShowUser( unsigned int id);
-	virtual bool isPlatformOverlayActive();
+	virtual bool API_pump();
 	virtual void SetNotificationsPosition(unsigned int x, unsigned int y);
 	virtual unsigned long long CreateLobby(int type, int maxplayers);
-	virtual bool GetCloudStats(unsigned long long* totalBytes, unsigned long long* availableBytes);
 	virtual bool SetAdditionalInfo(const char* key, const char* value);
+	virtual bool IsPortable();
+	virtual unsigned char GetBatteryLevel();
+	virtual bool ShowFloatingTextBox(int type, int xpos, int ypos, int width, int height);
+public:
+	OPlatformLocal() {
+		apiEnabled = false;
+	}
 private:
-	#ifdef WIN32
+#ifndef __linux__
 	STEAM_CALLBACK(OPlatformLocal, OnGameOverlayActivated, GameOverlayActivated_t);
-	#endif
-	void OnLobbyCreated(LobbyCreated_t *pCallback, bool bIOFailure);
+#endif
+	bool apiEnabled;
+	void OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure);
 	CCallResult< OPlatformLocal, LobbyCreated_t > m_LobbyCreatedCallResult;
-	bool apienabled;
 	int32 parseString(const char* string);
 };
 
@@ -86,186 +88,144 @@ extern "C" OPlatform* GetPlatformAPI()
 
 OPlatform* op = &opl;
 
-bool OPlatformLocal::API_Init() {
-	if (SteamAPI_Init()) {
-		apienabled = true;
-	}
-	else {
-		apienabled = false;
-	}
-	return apienabled;
+const char* OPlatformLocal::API_Name()
+{
+	return "Steam";
 }
 
+bool OPlatformLocal::API_Init() { 
+	apiEnabled = SteamAPI_Init();
+	return apiEnabled;
+}
 bool OPlatformLocal::API_Init(const char* data)
 {
 	int32 id = parseString(data);
-	if (SteamAPI_RestartAppIfNecessary(id)) {
-		apienabled = true;
-	}
-	else {
-		apienabled = false;
-	}
-	return apienabled;
+	apiEnabled = SteamAPI_RestartAppIfNecessary(id);
+	return apiEnabled;
 }
-
 void  OPlatformLocal::API_Shutdown() {
-	if (apienabled)
+	if (apiEnabled)
 		SteamAPI_Shutdown();
 }
-
+OpenAchievement* OPlatformLocal::openAchievement()
+{
+	return getAchievementInstance(apiEnabled);
+}
+OpenDLC* OPlatformLocal::openDLC()
+{
+	return getDLCInstance(apiEnabled);
+}
+OpenApp* OPlatformLocal::openApp()
+{
+	return getAppInstance(apiEnabled);
+}
 const char* OPlatformLocal::GetPlatformUserName() {
-	if (apienabled)
+	if (apiEnabled)
 		return SteamFriends()->GetPersonaName();
 
 	return "";
 }
-
-bool OPlatformLocal::GetAchievement(const char* name, bool* status) {
-	if (apienabled)
-		return SteamUserStats()->GetAchievement(name, status);
-
-	return false;
+void OPlatformLocal::ShowUser( unsigned int id) {
+	if (apiEnabled)
+		SteamFriends()->ActivateGameOverlayToUser("steamid", CSteamID(id, k_EUniversePublic, k_EAccountTypeIndividual));
 }
-
-const char* OPlatformLocal::GetAchievementDevName(unsigned int id) {
-	if (apienabled)
-		return SteamUserStats()->GetAchievementName(id);
-
-	return "";
-}
-
-bool OPlatformLocal::GetAchievementPercent(const char* name, unsigned int progress, unsigned int max) {
-	if (apienabled) {
-		if (SteamUserStats()->RequestCurrentStats()) {
-			return SteamUserStats()->IndicateAchievementProgress(name, progress, max);
-		}
-	}
-	return false;
-}
-
-bool OPlatformLocal::UnlockAchievement(const char* name) {
-	if (apienabled) {
-		if (SteamUserStats()->RequestCurrentStats()) {
-			if (SteamUserStats()->SetAchievement(name)) {
-				return SteamUserStats()->StoreStats();
-			}
-		}
-	}
-	return false;
-}
-
-bool OPlatformLocal::LockAchievement(const char* name) {
-	if (apienabled) {
-		if (SteamUserStats()->RequestCurrentStats()) {
-			if (SteamUserStats()->ClearAchievement(name)) {
-				return SteamUserStats()->StoreStats();
-			}
-		}
-	}
-	return false;
-}
-
-const char* OPlatformLocal::GetAchievementName(const char* name) {
-	if (apienabled)
-		return SteamUserStats()->GetAchievementDisplayAttribute(name, "name");
-
-	return "";
-}
-
-const char* OPlatformLocal::GetAchievementDescription(const char* name) {
-	if (apienabled)
-		return SteamUserStats()->GetAchievementDisplayAttribute(name, "desc");
-
-	return "";
-}
-
-bool OPlatformLocal::GetAchievementHidden(const char* name) {
-	if (apienabled)
-		return atoi(SteamUserStats()->GetAchievementDisplayAttribute(name, "hidden"));
-
-	return false;
-}
-
- void OPlatformLocal::ShowUser( unsigned int id) {
-	 if (apienabled)
-		 SteamFriends()->ActivateGameOverlayToUser("steamid", CSteamID(id,k_EUniversePublic,k_EAccountTypeIndividual));
-}
-
- bool OPlatformLocal::isPlatformOverlayActive() {
-	 if (apienabled)
+bool OPlatformLocal::API_pump() {
+	if (apiEnabled)
 		SteamAPI_RunCallbacks();
 
-	 return ::overlayActive;
+	return ::overlayActive;
 }
-#ifdef WIN32
- void OPlatformLocal::OnGameOverlayActivated(GameOverlayActivated_t* pCallback) {
-	 ::overlayActive = pCallback->m_bActive;
+#ifndef __linux__
+void OPlatformLocal::OnGameOverlayActivated(GameOverlayActivated_t* pCallback) {
+	::overlayActive = pCallback->m_bActive;
 }
 #endif
 
- void OPlatformLocal::SetNotificationsPosition(unsigned int x, unsigned int y) 
- {
-	 ENotificationPosition pos = k_EPositionBottomRight;
-	 switch (x){
-	 case 0:
-		 if (!y) {
-			 pos = k_EPositionTopLeft;
-		 }
-		 else {
-			 pos = k_EPositionBottomLeft;
-		 }
-		 break;
-	 default:
-		 if (!y) {
-			 pos = k_EPositionTopRight;
-		 }
-		 else {
-			 pos = k_EPositionBottomRight;
-		 }
-		 break;
-	 }
-	 if (apienabled)
-		 SteamUtils()->SetOverlayNotificationPosition(pos);
- }
+void OPlatformLocal::SetNotificationsPosition(unsigned int x, unsigned int y) {
+	ENotificationPosition pos = k_EPositionBottomRight;
+	switch (x) {
+	case 0:
+		if (!y) {
+			pos = k_EPositionTopLeft;
+		}
+		else {
+			pos = k_EPositionBottomLeft;
+		}
+		break;
+	default:
+		if (!y) {
+			pos = k_EPositionTopRight;
+		}
+		else {
+			pos = k_EPositionBottomRight;
+		}
+		break;
+	}
+	if (apiEnabled)
+		SteamUtils()->SetOverlayNotificationPosition(pos);
+}
+unsigned long long OPlatformLocal::CreateLobby(int type, int maxplayers) { 
+	if (apiEnabled) {
+		SteamAPICall_t hSteamAPICall = SteamMatchmaking()->CreateLobby((ELobbyType)type, maxplayers);
+		m_LobbyCreatedCallResult.Set(hSteamAPICall, this, &OPlatformLocal::OnLobbyCreated);
+		bool fail = false;
+		SteamAPI_RunCallbacks();
+		LobbyCreated_t pCallback;
+		while (!SteamUtils()->GetAPICallResult(hSteamAPICall, &pCallback, sizeof(pCallback), pCallback.k_iCallback, &fail)) {
+		}
+		::LobbyID = pCallback.m_ulSteamIDLobby;
+		return ::LobbyID;
+	}
+	return 0;
+}
 
- unsigned long long OPlatformLocal::CreateLobby(int type, int maxplayers) {
-	 if (apienabled) {
-		 SteamAPICall_t hSteamAPICall = SteamMatchmaking()->CreateLobby((ELobbyType)type, maxplayers);
-		 m_LobbyCreatedCallResult.Set(hSteamAPICall, this, &OPlatformLocal::OnLobbyCreated);
-		 bool fail = false;
-		 SteamAPI_RunCallbacks();
-		 LobbyCreated_t pCallback;
-		 while (!SteamUtils()->GetAPICallResult(hSteamAPICall,&pCallback,sizeof(pCallback),pCallback.k_iCallback, &fail)) {
-		 }
-		 ::LobbyID = pCallback.m_ulSteamIDLobby;
-		 return ::LobbyID;
-	 }
-	 return 0;
- }
+bool OPlatformLocal::SetAdditionalInfo(const char* key, const char* value)
+{
+	if (apiEnabled) {
+		return SteamFriends()->SetRichPresence(key, value);
+	}
+	return false;
+}
 
- bool OPlatformLocal::GetCloudStats(unsigned long long* totalBytes, unsigned long long* availableBytes)
- {
-	 return SteamRemoteStorage()->GetQuota(totalBytes, availableBytes);
- }
+bool OPlatformLocal::IsPortable()
+{
+	if (apiEnabled) {
+		return SteamUtils()->IsSteamRunningOnSteamDeck();
+	}
+	return false;
+}
 
- bool OPlatformLocal::SetAdditionalInfo(const char* key, const char* value)
- {
-	 return SteamFriends()->SetRichPresence(key, value);
- }
+unsigned char OPlatformLocal::GetBatteryLevel()
+{
+	if (apiEnabled)
+		return SteamUtils()->GetCurrentBatteryPower();
 
- void OPlatformLocal::OnLobbyCreated(LobbyCreated_t *pCallback, bool bIOFailure) {
-	 if (bIOFailure || pCallback->m_eResult != k_EResultOK) {
-		 return;
-	 }
- }
+	return 0;
+}
 
- 
+bool OPlatformLocal::ShowFloatingTextBox(int type, int xpos, int ypos, int width, int height)
+{
+	if (apiEnabled) {
+		if (type < EFloatingGamepadTextInputMode::k_EFloatingGamepadTextInputModeModeNumeric + 1) {
+			return SteamUtils()->ShowFloatingGamepadTextInput(static_cast<EFloatingGamepadTextInputMode>(type), xpos, ypos, width, height);
+		}
+	}
+	return false;
+}
+
+void OPlatformLocal::OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure) {
+	if (bIOFailure || pCallback->m_eResult != k_EResultOK) {
+		return;
+	}
+}
+
+
 int32 OPlatformLocal::parseString(const char* string)
- {
+{
 	int32 result = 0;
-	int size = strlen(string);
-	int allDigit = size;
-	for (int i = 0; i < size; i++) {
+	size_t size = strlen(string);
+	size_t allDigit = size;
+	for (unsigned int i = 0; i < size; i++) {
 		if (std::isdigit(string[i])) {
 			allDigit = allDigit - 1;
 		}
@@ -274,4 +234,4 @@ int32 OPlatformLocal::parseString(const char* string)
 		result = std::stoi(string);
 	}
 	return result;
- }
+}
