@@ -39,7 +39,7 @@ private:
 	bool apiEnabled;
 };
 
-OpenDLCLocal instance;
+OpenDLCLocal dlcinstance;
 
 int OpenDLCLocal::CountDLCs()
 {
@@ -81,8 +81,8 @@ void OpenDLCLocal::installDLC(const char* id) {
 
 OpenDLC* OpenDLCLocal::getInstance(bool apiEnabled)
 {
-	instance.apiEnabled = apiEnabled;
-	return &instance;
+	dlcinstance.apiEnabled = apiEnabled;
+	return &dlcinstance;
 }
 
 OpenDLC* getDLCInstance(bool apiEnabled)

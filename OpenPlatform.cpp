@@ -57,7 +57,9 @@ public:
 		apiEnabled = false;
 	}
 private:
+#ifndef __linux__
 	STEAM_CALLBACK(OPlatformLocal, OnGameOverlayActivated, GameOverlayActivated_t);
+#endif
 	bool apiEnabled;
 	void OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure);
 	CCallResult< OPlatformLocal, LobbyCreated_t > m_LobbyCreatedCallResult;
@@ -133,10 +135,11 @@ bool OPlatformLocal::API_pump() {
 
 	return ::overlayActive;
 }
-
+#ifndef __linux__
 void OPlatformLocal::OnGameOverlayActivated(GameOverlayActivated_t* pCallback) {
 	::overlayActive = pCallback->m_bActive;
 }
+#endif
 
 void OPlatformLocal::SetNotificationsPosition(unsigned int x, unsigned int y) {
 	ENotificationPosition pos = k_EPositionBottomRight;
@@ -222,7 +225,7 @@ int32 OPlatformLocal::parseString(const char* string)
 	int32 result = 0;
 	size_t size = strlen(string);
 	size_t allDigit = size;
-	for (int i = 0; i < size; i++) {
+	for (unsigned int i = 0; i < size; i++) {
 		if (std::isdigit(string[i])) {
 			allDigit = allDigit - 1;
 		}
