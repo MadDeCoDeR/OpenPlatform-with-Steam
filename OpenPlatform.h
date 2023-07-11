@@ -24,6 +24,7 @@ SOFTWARE.
 #include "OpenAchievement.h"
 #include "OpenDLC.h"
 #include "OpenApplication.h"
+#include "OpenInput.h"
 
 class OPlatform
 {
@@ -56,6 +57,10 @@ public:
 	* Get an Instance of the OpenApp Class. (for App functions)
 	*/
 	virtual OpenApp* openApp() = 0;
+	/*
+	* Get an Instance of the OpenInput Class. (for special API Input functions)
+	*/
+	virtual OpenInput* openInput() = 0;
 	virtual const char* GetPlatformUserName() = 0;
 	virtual void ShowUser( unsigned int id) = 0;
 	/*
