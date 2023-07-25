@@ -96,17 +96,26 @@ const char* OPlatformLocal::API_Name()
 
 bool OPlatformLocal::API_Init() { 
 	apiEnabled = SteamAPI_Init();
+	if (apiEnabled) {
+		openInput()->Start();
+	}
 	return apiEnabled;
 }
 bool OPlatformLocal::API_Init(const char* data)
 {
 	int32 id = parseString(data);
 	apiEnabled = SteamAPI_RestartAppIfNecessary(id);
+	if (apiEnabled) {
+		openInput()->Start();
+	}
 	return apiEnabled;
 }
 void  OPlatformLocal::API_Shutdown() {
-	if (apiEnabled)
+	if (apiEnabled) {
+		openInput()->Stop();
 		SteamAPI_Shutdown();
+		
+	}
 }
 OpenAchievement* OPlatformLocal::openAchievement()
 {

@@ -25,6 +25,9 @@ SOFTWARE.
 
 class OpenInputLocal : public OpenInput {
 	virtual void ChangeControllerConfiguration(const char* configName, int controllerIndex);
+	virtual void RegisterInputConfigurationFile(const char* path);
+	virtual bool Start();
+	virtual bool Stop();
 public:
 	static OpenInput* getInstance(bool apiEnabled);
 	OpenInputLocal() {
@@ -44,6 +47,29 @@ void OpenInputLocal::ChangeControllerConfiguration(const char* configName, int c
 		InputActionSetHandle_t steamActionSet = SteamInput()->GetActionSetHandle(configName);
 		SteamInput()->ActivateActionSet(steamController, steamActionSet);
 	}
+}
+
+void OpenInputLocal::RegisterInputConfigurationFile(const char* path)
+{
+	if (apiEnabled) {
+		SteamInput()->SetInputActionManifestFilePath(path);
+	}
+}
+
+bool OpenInputLocal::Start()
+{
+	if (apiEnabled) {
+		return SteamInput()->Init(false);
+	}
+	return false;
+}
+
+bool OpenInputLocal::Stop()
+{
+	if (apiEnabled) {
+		return SteamInput()->Shutdown();
+	}
+	return false;
 }
 
 OpenInput* OpenInputLocal::getInstance(bool apiEnabled)
