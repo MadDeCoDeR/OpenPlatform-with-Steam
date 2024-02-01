@@ -31,7 +31,6 @@ SOFTWARE.
 #include <string>
 
 static bool overlayActive = false;
-static unsigned long long LobbyID = 0;
 
 class OPlatformLocal : public OPlatform
 {
@@ -44,11 +43,11 @@ public:
 	virtual OpenDLC* openDLC();
 	virtual OpenApp* openApp();
 	virtual OpenInput* openInput();
+	virtual OpenMultiplayer* openMultiplayer();
 	virtual const char* GetPlatformUserName();
 	virtual void ShowUser( unsigned int id);
 	virtual bool API_pump();
 	virtual void SetNotificationsPosition(unsigned int x, unsigned int y);
-	virtual unsigned long long CreateLobby(int type, int maxplayers);
 	virtual bool SetAdditionalInfo(const char* key, const char* value);
 	virtual bool IsPortable();
 	virtual unsigned char GetBatteryLevel();
@@ -58,12 +57,9 @@ public:
 		apiEnabled = false;
 	}
 private:
-#ifndef __linux__
-	STEAM_CALLBACK(OPlatformLocal, OnGameOverlayActivated, GameOverlayActivated_t);
-#endif
+	STEAM_CALLBACK_MANUAL(OPlatformLocal, OnGameOverlayActivated, GameOverlayActivated_t, m_OverlayActivatedCallBack);
 	bool apiEnabled;
-	void OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure);
-	CCallResult< OPlatformLocal, LobbyCreated_t > m_LobbyCreatedCallResult;
+	
 	int32 parseString(const char* string);
 };
 
@@ -126,6 +122,10 @@ OpenInput* OPlatformLocal::openInput()
 {
 	return getInputInstance(apiEnabled);
 }
+OpenMultiplayer* OPlatformLocal::openMultiplayer()
+{
+	return getMultiplayerInstance(apiEnabled);
+}
 const char* OPlatformLocal::GetPlatformUserName() {
 	if (apiEnabled)
 		return SteamFriends()->GetPersonaName();
@@ -142,11 +142,9 @@ bool OPlatformLocal::API_pump() {
 
 	return ::overlayActive;
 }
-#ifndef __linux__
 void OPlatformLocal::OnGameOverlayActivated(GameOverlayActivated_t* pCallback) {
 	::overlayActive = pCallback->m_bActive;
 }
-#endif
 
 void OPlatformLocal::SetNotificationsPosition(unsigned int x, unsigned int y) {
 	ENotificationPosition pos = k_EPositionBottomRight;
@@ -170,20 +168,6 @@ void OPlatformLocal::SetNotificationsPosition(unsigned int x, unsigned int y) {
 	}
 	if (apiEnabled)
 		SteamUtils()->SetOverlayNotificationPosition(pos);
-}
-unsigned long long OPlatformLocal::CreateLobby(int type, int maxplayers) { 
-	if (apiEnabled) {
-		SteamAPICall_t hSteamAPICall = SteamMatchmaking()->CreateLobby((ELobbyType)type, maxplayers);
-		m_LobbyCreatedCallResult.Set(hSteamAPICall, this, &OPlatformLocal::OnLobbyCreated);
-		bool fail = false;
-		SteamAPI_RunCallbacks();
-		LobbyCreated_t pCallback;
-		while (!SteamUtils()->GetAPICallResult(hSteamAPICall, &pCallback, sizeof(pCallback), pCallback.k_iCallback, &fail)) {
-		}
-		::LobbyID = pCallback.m_ulSteamIDLobby;
-		return ::LobbyID;
-	}
-	return 0;
 }
 
 bool OPlatformLocal::SetAdditionalInfo(const char* key, const char* value)
@@ -218,12 +202,6 @@ bool OPlatformLocal::ShowFloatingTextBox(int type, int xpos, int ypos, int width
 		}
 	}
 	return false;
-}
-
-void OPlatformLocal::OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure) {
-	if (bIOFailure || pCallback->m_eResult != k_EResultOK) {
-		return;
-	}
 }
 
 
