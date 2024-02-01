@@ -55,6 +55,10 @@ public:
 public:
 	OPlatformLocal() {
 		apiEnabled = false;
+		m_OverlayActivatedCallBack.Register(this, &OPlatformLocal::OnGameOverlayActivated);
+	}
+	~OPlatformLocal() {
+		m_OverlayActivatedCallBack.Unregister();
 	}
 private:
 	STEAM_CALLBACK_MANUAL(OPlatformLocal, OnGameOverlayActivated, GameOverlayActivated_t, m_OverlayActivatedCallBack);

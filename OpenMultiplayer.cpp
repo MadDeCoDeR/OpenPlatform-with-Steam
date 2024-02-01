@@ -39,6 +39,10 @@ public:
 	static OpenMultiplayer* getInstance(bool apiEnabled);
 	OpenMultiplayerLocal() {
 		apiEnabled = false;
+		m_SessionRequestedCallBack.Register(this, &OpenMultiplayerLocal::OnSessionRequested);
+	}
+	~OpenMultiplayerLocal() {
+		m_SessionRequestedCallBack.Unregister();
 	}
 private:
 	STEAM_CALLBACK_MANUAL(OpenMultiplayerLocal, OnSessionRequested, P2PSessionRequest_t, m_SessionRequestedCallBack);
