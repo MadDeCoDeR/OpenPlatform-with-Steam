@@ -23,6 +23,7 @@ SOFTWARE.
 #include"OpenDLC.h"
 #include "sdk/public/steam/steam_api.h"
 #include <mutex>
+#include <cstdlib>
 
 class OpenDLCLocal : public OpenDLC {
 	virtual int CountDLCs();

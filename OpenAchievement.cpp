@@ -23,6 +23,7 @@ SOFTWARE.
 #include "OpenAchievement.h"
 #include "sdk/public/steam/steam_api.h"
 #include <mutex>
+#include <cstdlib>
 
 using namespace std;
 
@@ -63,9 +64,7 @@ const char* OpenAchievementLocal::GetAchievementDevName(unsigned int id)
 bool OpenAchievementLocal::GetAchievementPercent(const char* name, unsigned int progress, unsigned int max)
 {
 	if (apiEnabled) {
-		if (SteamUserStats()->RequestCurrentStats()) {
-			return SteamUserStats()->IndicateAchievementProgress(name, progress, max);
-		}
+		return SteamUserStats()->IndicateAchievementProgress(name, progress, max);
 	}
 	return false;
 }
@@ -73,10 +72,8 @@ bool OpenAchievementLocal::GetAchievementPercent(const char* name, unsigned int 
 bool OpenAchievementLocal::UnlockAchievement(const char* name)
 {
 	if (apiEnabled) {
-		if (SteamUserStats()->RequestCurrentStats()) {
-			if (SteamUserStats()->SetAchievement(name)) {
-				return SteamUserStats()->StoreStats();
-			}
+		if (SteamUserStats()->SetAchievement(name)) {
+			return SteamUserStats()->StoreStats();
 		}
 	}
 	return false;
@@ -85,10 +82,8 @@ bool OpenAchievementLocal::UnlockAchievement(const char* name)
 bool OpenAchievementLocal::LockAchievement(const char* name)
 {
 	if (apiEnabled) {
-		if (SteamUserStats()->RequestCurrentStats()) {
-			if (SteamUserStats()->ClearAchievement(name)) {
-				return SteamUserStats()->StoreStats();
-			}
+		if (SteamUserStats()->ClearAchievement(name)) {
+			return SteamUserStats()->StoreStats();
 		}
 	}
 	return false;
